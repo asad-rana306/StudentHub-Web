@@ -4,6 +4,7 @@ import Dashboard from './components/Dashboard';
 import Signup from './components/signup';
 import FillForm from './components/FillForm';
 import GradeCal from './components/GradeCal';
+import PastPaper from './components/PastPaper';
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/fill-form" element={<FillForm />} />
         <Route path="/grade-calculation" element={<GradeCal />} />
+        <Route path="/past-paper" element={<PastPaper />} />
       </Routes>
     </Router>
   );
