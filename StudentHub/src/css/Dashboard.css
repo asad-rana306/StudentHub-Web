@@ -218,7 +218,7 @@
 .avatar-wrap {
   width: 60px; /* Reduced size slightly for better header proportions */
   height: 60px;
-  /* yes... keep previous styles ... */ 
+  /* ... keep previous styles ... */ 
   border-radius: 50%;
   overflow: hidden;
   border: 2px solid #fff;
