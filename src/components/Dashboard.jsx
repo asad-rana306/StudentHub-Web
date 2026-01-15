@@ -102,6 +102,9 @@ const res = await fetch(
             <button onClick={() => navigate('/grade-calculation')} className="nav-link">
               Grade Calculation
             </button>
+            <button onClick={() => navigate('/clash-solver')} className="nav-link">
+              Clash Solver
+            </button>
             <button onClick={handleSignOut} className="nav-link sign-out">
               Sign out
             </button>
