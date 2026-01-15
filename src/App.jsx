@@ -5,6 +5,7 @@ import Signup from './components/signup';
 import FillForm from './components/FillForm';
 import GradeCal from './components/GradeCal';
 import PastPaper from './components/PastPaper';
+import AddSection from './components/addSection';
 
 function App() {
   return (
@@ -16,6 +17,7 @@ function App() {
         <Route path="/fill-form" element={<FillForm />} />
         <Route path="/grade-calculation" element={<GradeCal />} />
         <Route path="/past-paper" element={<PastPaper />} />
+        <Route path="/add-section" element={<AddSection />} />
       </Routes>
     </Router>
   );

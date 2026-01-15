@@ -90,6 +90,9 @@ const res = await fetch(
             <button onClick={() => navigate('/clash-solver')} className="nav-link">
               Clash Solver
             </button>
+            <button onClick={() => navigate('/add-section')} className="nav-link">
+              Add Section
+            </button>
             <button onClick={() => navigate('/past-paper')} className="nav-link">
               Past Paper
             </button>
