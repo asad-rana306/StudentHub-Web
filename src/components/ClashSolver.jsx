@@ -2,279 +2,223 @@ import React, { useState, useEffect } from 'react';
 import '../css/ClashSolver.css';
 
 const ClashSolver = () => {
-    // --- STATE MANAGEMENT ---
+    // --- STATE ---
     const [input, setInput] = useState({ sectionName: '', courseName: '' });
-    const [currentSchedule, setCurrentSchedule] = useState([]); // List of active courses
-    const [clashList, setClashList] = useState([]); // List of detected clashes from API
-    const [savedTimetables, setSavedTimetables] = useState([]); // From LocalStorage
+    const [currentSchedule, setCurrentSchedule] = useState([]);
+    const [clashList, setClashList] = useState([]);
+    const [savedTimetables, setSavedTimetables] = useState([]);
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState(null);
+    
+    // UI Toggles
+    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
 
-    // Load saved timetables on mount
     useEffect(() => {
         const saved = localStorage.getItem('myTimetables');
-        if (saved) {
-            setSavedTimetables(JSON.parse(saved));
-        }
+        if (saved) setSavedTimetables(JSON.parse(saved));
     }, []);
 
-    // --- API 1: FETCH COURSE DETAILS ---
+    // --- LOGIC: GENERATE TIME SLOTS (8:30 - 20:30) ---
+    // Fixed: Now returns clean 30min slots for the header
+    const generateTimeHeaders = () => {
+        const slots = [];
+        let h = 8, m = 30;
+        let count = 1;
+
+        while (h < 20 || (h === 20 && m <= 0)) {
+            const startStr = `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+            
+            // Calculate End
+            let endM = m + 30;
+            let endH = h;
+            if (endM >= 60) { endM -= 60; endH += 1; }
+            const endStr = `${endH.toString().padStart(2, '0')}:${endM.toString().padStart(2, '0')}`;
+
+            slots.push({
+                id: count++,
+                label: startStr,    // For logic matching
+                displayTop: startStr, // For UI Top line
+                displayBottom: endStr // For UI Bottom line
+            });
+
+            m += 30;
+            if (m >= 60) { m = 0; h++; }
+        }
+        return slots;
+    };
+
+    const timeHeaders = generateTimeHeaders();
+
+    // --- API CALLS (Same as before) ---
     const handleAddCourse = async (e) => {
         e.preventDefault();
         if (!input.sectionName || !input.courseName) return;
-
         setLoading(true);
-        setError(null);
-
         try {
-            // Note: User prompt had /delete, but we need /details to fetch info first
             const url = `http://localhost:8080/api/courses/details?section=${input.sectionName}&course=${input.courseName}`;
             const res = await fetch(url);
-            
-            if (!res.ok) throw new Error("Course not found or API error");
-            
+            if (!res.ok) throw new Error("Course not found");
             const newCourse = await res.json();
             
-            // Check if already added
-            if (currentSchedule.some(c => c.courseName === newCourse.courseName && c.theorySectionName === newCourse.theorySectionName)) {
-                throw new Error("Course already in timetable!");
+            if (!currentSchedule.some(c => c.courseName === newCourse.courseName)) {
+                const updated = [...currentSchedule, newCourse];
+                setCurrentSchedule(updated);
+                checkClashes(updated);
             }
-
-            // Update Schedule
-            const updatedSchedule = [...currentSchedule, newCourse];
-            setCurrentSchedule(updatedSchedule);
-            
-            // CHECK CLASHES IMMEDIATELY
-            await checkClashes(updatedSchedule);
-
-            setInput({ sectionName: '', courseName: '' }); // Clear input
-
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setLoading(false);
-        }
+            setInput({ ...input, courseName: '' });
+        } catch (err) { alert(err.message); } finally { setLoading(false); }
     };
 
-    // --- API 2: DETECT CLASHES ---
     const checkClashes = async (schedule) => {
-        if (schedule.length < 2) {
-            setClashList([]);
-            return;
-        }
-
-        // Convert Schedule to the format ClashDetector API expects
-        // We map our "AddSectionDTO" format to "ClashCheckRequestDTO" format
+        if (schedule.length < 2) { setClashList([]); return; }
         const payload = {
             courses: schedule.map(c => ({
                 courseName: c.courseName,
                 sectionName: c.theorySectionName,
-                // Lecture 1
-                day1: c.dayOfWeek1,
-                startTime1: c.startTime1,
-                endTime1: c.endTime1,
-                // Lecture 2
-                day2: c.dayOfWeek2,
-                startTime2: c.startTime2,
-                endTime2: c.endTime2,
-                // Lab
+                day1: c.dayOfWeek1, startTime1: c.startTime1, endTime1: c.endTime1,
+                day2: c.dayOfWeek2, startTime2: c.startTime2, endTime2: c.endTime2,
                 hasLab: !!c.labTeacherName,
-                labDay: c.labDayOfWeek,
-                labStartTime: c.labStartTime,
-                labEndTime: c.labEndTime
+                labDay: c.labDayOfWeek, labStartTime: c.labStartTime, labEndTime: c.labEndTime
             }))
         };
-
         try {
             const res = await fetch('http://localhost:8080/api/clash/detect', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
-
             const data = await res.json();
-            
-            // If API returns string "No clashes...", treat as empty array
-            if (Array.isArray(data)) {
-                setClashList(data);
-            } else {
-                setClashList([]);
-            }
-        } catch (err) {
-            console.error("Clash detection failed", err);
-        }
+            setClashList(Array.isArray(data) ? data : []);
+        } catch (err) { console.error(err); }
     };
 
-    // --- REMOVE COURSE ---
-    const handleRemoveCourse = async (courseToRemove) => {
-        const updated = currentSchedule.filter(c => c.courseName !== courseToRemove.courseName);
+    const handleRemoveCourse = (courseName) => {
+        const updated = currentSchedule.filter(c => c.courseName !== courseName);
         setCurrentSchedule(updated);
-        await checkClashes(updated);
+        checkClashes(updated);
     };
 
-    // --- SAVE / NEW / LOAD ---
-    const saveTimetable = () => {
-        if (currentSchedule.length === 0) return;
-        const newSaved = [...savedTimetables, { 
-            id: Date.now(), 
-            date: new Date().toLocaleDateString(), 
-            courses: currentSchedule 
-        }];
-        setSavedTimetables(newSaved);
-        localStorage.setItem('myTimetables', JSON.stringify(newSaved));
-        alert("Timetable Saved!");
-    };
+    const isClashing = (courseName) => clashList.some(c => c.course1Name === courseName || c.course2Name === courseName);
 
-    const createNewTimetable = () => {
-        if(window.confirm("Start a new timetable? Current unsaved changes will be lost.")) {
-            setCurrentSchedule([]);
-            setClashList([]);
-        }
-    };
+    // --- HELPER: RENDER BLOCK LOGIC ---
+    const renderCourseBlock = (course, day, timeStart, type) => {
+        let cDay, cStart, cEnd;
+        if(type === 'Lec 1') { cDay = course.dayOfWeek1; cStart = course.startTime1; cEnd = course.endTime1; }
+        else if(type === 'Lec 2') { cDay = course.dayOfWeek2; cStart = course.startTime2; cEnd = course.endTime2; }
+        else { cDay = course.labDayOfWeek; cStart = course.labStartTime; cEnd = course.labEndTime; }
 
-    const loadTimetable = (saved) => {
-        setCurrentSchedule(saved.courses);
-        checkClashes(saved.courses); // Re-check clashes for loaded data
-    };
+        if (cDay !== day || !cStart) return null;
+        if (cStart.substring(0, 5) !== timeStart) return null;
 
-    const deleteSaved = (id) => {
-        const updated = savedTimetables.filter(t => t.id !== id);
-        setSavedTimetables(updated);
-        localStorage.setItem('myTimetables', JSON.stringify(updated));
-    }
+        const startH = parseInt(cStart.split(':')[0]);
+        const startM = parseInt(cStart.split(':')[1]);
+        const endH = parseInt(cEnd.split(':')[0]);
+        const endM = parseInt(cEnd.split(':')[1]);
 
-    // --- HELPER: TIME GENERATOR ---
-    // Generates 30 min slots from 08:30 to 20:30
-    const timeSlots = [];
-    let startHour = 8;
-    let startMin = 30;
-    while (startHour < 20 || (startHour === 20 && startMin <= 30)) {
-        const timeStr = `${startHour.toString().padStart(2, '0')}:${startMin.toString().padStart(2, '0')}`;
-        timeSlots.push(timeStr);
-        startMin += 30;
-        if (startMin === 60) {
-            startMin = 0;
-            startHour++;
-        }
-    }
+        const durationMinutes = (endH * 60 + endM) - (startH * 60 + startM);
+        const slotsSpan = durationMinutes / 30; 
 
-    // --- HELPER: IS COURSE CLASHING? ---
-    const isClashing = (courseName) => {
-        return clashList.some(clash => 
-            clash.course1Name === courseName || clash.course2Name === courseName
+        // Fixed Width Calculation: Subtracted 2px for borders to prevent overflow
+        const widthStyle = `calc(100% * ${slotsSpan} - 2px)`; 
+
+        const clashing = isClashing(course.courseName);
+
+        return (
+            <div key={`${course.courseName}-${type}`} 
+                 className={`course-block-absolute ${clashing ? 'clash' : ''}`}
+                 style={{ width: widthStyle, zIndex: 10 }}>
+                <div className="course-content">
+                    <strong>{course.courseName}</strong>
+                    <span>{course.theorySectionName}</span>
+                    <small>{type}</small>
+                </div>
+                <button className="delete-x" onClick={() => handleRemoveCourse(course.courseName)}>×</button>
+            </div>
         );
     };
 
+    // --- SAVE LOGIC ---
+    const saveCurrentTimetable = () => {
+        if(currentSchedule.length === 0) return;
+        const newEntry = { id: Date.now(), date: new Date().toLocaleString(), courses: currentSchedule };
+        const updated = [newEntry, ...savedTimetables];
+        setSavedTimetables(updated);
+        localStorage.setItem('myTimetables', JSON.stringify(updated));
+        alert("Timetable Saved!");
+    };
+
     return (
-        <div className="solver-container">
-            {/* --- LEFT SIDEBAR (GALLERY) --- */}
-            <div className="sidebar">
-                <h3>Saved Tables</h3>
-                <button onClick={createNewTimetable} className="new-btn">+ New Timetable</button>
+        <div className="solver-container full-view">
+            
+            {/* FLOATING CONTROLS */}
+            <div className="floating-dock">
+                <button className="icon-btn" onClick={() => setIsSidebarOpen(!isSidebarOpen)} title="Saved Timetables">📂</button>
+                <button className="icon-btn" onClick={() => setIsSearchOpen(!isSearchOpen)} title="Add Course">➕</button>
+                <button className="icon-btn save-action" onClick={saveCurrentTimetable} title="Save Current">💾</button>
+            </div>
+
+            {/* SIDEBAR POPUP */}
+            <div className={`popup-panel sidebar-panel ${isSidebarOpen ? 'open' : ''}`}>
+                <div className="panel-header"><h3>Saved Tables</h3><button onClick={() => setIsSidebarOpen(false)}>×</button></div>
                 <div className="saved-list">
-                    {savedTimetables.length === 0 && <p className="empty-msg">No saved tables</p>}
                     {savedTimetables.map(t => (
-                        <div key={t.id} className="saved-item" onClick={() => loadTimetable(t)}>
-                            <span>📅 {t.date}</span>
-                            <small>{t.courses.length} Courses</small>
-                            <button className="del-btn-mini" onClick={(e) => { e.stopPropagation(); deleteSaved(t.id); }}>×</button>
+                        <div key={t.id} className="saved-item" onClick={() => {setCurrentSchedule(t.courses); setIsSidebarOpen(false);}}>
+                            <span>{t.date}</span><small>{t.courses.length} courses</small>
                         </div>
                     ))}
                 </div>
             </div>
 
-            {/* --- MAIN CONTENT --- */}
-            <div className="main-content">
-                <div className="control-panel">
-                    <h2>⚡ Clash Solver & Scheduler</h2>
-                    <form onSubmit={handleAddCourse} className="input-group">
-                        <input 
-                            type="text" 
-                            placeholder="Section (e.g. sp23-bse-a)" 
-                            value={input.sectionName}
-                            onChange={(e) => setInput({...input, sectionName: e.target.value})}
-                            required
-                        />
-                        <input 
-                            type="text" 
-                            placeholder="Course Name" 
-                            value={input.courseName}
-                            onChange={(e) => setInput({...input, courseName: e.target.value})}
-                            required
-                        />
-                        <button type="submit" disabled={loading} className="add-btn">
-                            {loading ? "..." : "Add to Table"}
-                        </button>
-                        <button type="button" onClick={saveTimetable} className="save-btn">💾 Save</button>
-                    </form>
-                    {error && <div className="error-banner">{error}</div>}
-                    {clashList.length > 0 && (
-                        <div className="clash-alert">
-                            ⚠️ <strong>{clashList.length} Clashes Detected!</strong> Check red boxes below.
-                        </div>
-                    )}
+            {/* SEARCH POPUP */}
+            <div className={`popup-panel search-panel ${isSearchOpen ? 'open' : ''}`}>
+                <div className="panel-header"><h3>Add Course</h3><button onClick={() => setIsSearchOpen(false)}>×</button></div>
+                <form onSubmit={handleAddCourse}>
+                    <input className="search-input" placeholder="Section (e.g. sp23-bse-a)" value={input.sectionName} onChange={e => setInput({...input, sectionName: e.target.value})} />
+                    <input className="search-input" placeholder="Course Name" value={input.courseName} onChange={e => setInput({...input, courseName: e.target.value})} />
+                    <button type="submit" disabled={loading} className="panel-action-btn">{loading ? 'Adding...' : 'Add to Grid'}</button>
+                </form>
+                {clashList.length > 0 && <div className="popup-clash-warning">⚠️ {clashList.length} Clashes Detected!</div>}
+            </div>
+
+            {/* --- MAIN TIMETABLE UI --- */}
+            <div className="timetable-paper">
+                <div className="timetable-header">
+                    <h2>Fall 2025 - Timetable</h2>
                 </div>
 
-                {/* --- TIMETABLE GRID --- */}
-                <div className="timetable-wrapper">
-                    <div className="timetable-grid">
-                        {/* Header Row */}
-                        <div className="header-cell">Time / Day</div>
-                        {timeSlots.map(time => (
-                            <div key={time} className="header-cell time-header">{time}</div>
-                        ))}
-
-                        {/* Days Rows */}
-                        {['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY'].map(day => (
-                            <React.Fragment key={day}>
-                                <div className="day-header">{day}</div>
-                                {timeSlots.map(time => (
-                                    <div key={`${day}-${time}`} className="grid-cell">
-                                        {/* Render Courses in this cell */}
-                                        {currentSchedule.map(course => {
-                                            // Check Logic: Does this course have a class at this Day & Time?
-                                            // Simple check: strict start time match or simply falling within range.
-                                            // For this UI, we will render a block if the time falls within the range.
-                                            
-                                            const checkSlot = (cDay, cStart, cEnd, type) => {
-                                                if (cDay !== day) return null;
-                                                // Convert strings "08:30:00" -> number comparision
-                                                if (!cStart || !cEnd) return null;
-                                                
-                                                const slotTime = parseFloat(time.replace(':', '.'));
-                                                const start = parseFloat(cStart.substring(0, 5).replace(':', '.'));
-                                                const end = parseFloat(cEnd.substring(0, 5).replace(':', '.'));
-
-                                                if (slotTime >= start && slotTime < end) {
-                                                    const clashing = isClashing(course.courseName);
-                                                    return (
-                                                        <div key={`${course.courseName}-${type}`} 
-                                                             className={`course-block ${clashing ? 'clash' : ''}`}>
-                                                            <div className="course-info">
-                                                                <strong>{course.courseName}</strong>
-                                                                <span>{course.theorySectionName}</span>
-                                                                <small>{type}</small>
-                                                            </div>
-                                                            <button className="remove-x" onClick={() => handleRemoveCourse(course)}>×</button>
-                                                        </div>
-                                                    );
-                                                }
-                                                return null;
-                                            };
-
-                                            return (
-                                                <React.Fragment key={course.courseName}>
-                                                    {checkSlot(course.dayOfWeek1, course.startTime1, course.endTime1, "Lec 1")}
-                                                    {checkSlot(course.dayOfWeek2, course.startTime2, course.endTime2, "Lec 2")}
-                                                    {checkSlot(course.labDayOfWeek, course.labStartTime, course.labEndTime, "Lab")}
-                                                </React.Fragment>
-                                            );
-                                        })}
-                                    </div>
-                                ))}
-                            </React.Fragment>
+                <div className="grid-container">
+                    {/* Header Row */}
+                    <div className="grid-header-row">
+                        <div className="grid-cell corner-cell"></div> {/* Empty corner */}
+                        {timeHeaders.map(slot => (
+                            <div key={slot.id} className="grid-cell time-header">
+                                <span className="slot-num">{slot.id}</span>
+                                <div className="time-stack">
+                                    <span>{slot.displayTop}</span>
+                                    <span>{slot.displayBottom}</span>
+                                </div>
+                            </div>
                         ))}
                     </div>
+
+                    {/* Day Rows */}
+                    {['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'].map(day => (
+                        <div key={day} className="grid-row">
+                            <div className="grid-cell day-label">{day.substring(0, 2)}</div>
+                            
+                            {timeHeaders.map(slot => (
+                                <div key={slot.id} className="grid-cell drop-zone">
+                                    {currentSchedule.map(course => (
+                                        <React.Fragment key={course.courseName}>
+                                            {renderCourseBlock(course, day, slot.label, 'Lec 1')}
+                                            {renderCourseBlock(course, day, slot.label, 'Lec 2')}
+                                            {renderCourseBlock(course, day, slot.label, 'Lab')}
+                                        </React.Fragment>
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                    ))}
                 </div>
             </div>
         </div>
