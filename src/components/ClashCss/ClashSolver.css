@@ -1,4 +1,4 @@
-/* --- CONTAINER --- */
+/* --- MAIN CONTAINER --- */
 .solver-container {
     background-color: #f0f2f5; 
     height: 100vh; /* Fits screen exactly */
@@ -10,7 +10,7 @@
     overflow: hidden; /* Prevents outer scroll */
 }
 
-/* --- ICONS (Floating) --- */
+/* --- ICONS (Floating Dock) --- */
 .floating-dock {
     position: absolute;
     top: 20px; left: 20px;
@@ -19,6 +19,7 @@
     flex-direction: column;
     gap: 15px;
 }
+
 .icon-btn {
     width: 45px; height: 45px;
     border-radius: 50%; border: none;
@@ -27,27 +28,9 @@
     box-shadow: 0 4px 6px rgba(0,0,0,0.2);
     transition: 0.2s;
 }
+
 .icon-btn:hover { transform: scale(1.1); }
 .save-action { background: #2e7d32; }
-
-/* --- POPUPS --- */
-.popup-panel {
-    position: absolute;
-    background: white;
-    box-shadow: 5px 0 25px rgba(0,0,0,0.2);
-    padding: 20px; z-index: 999;
-    border-radius: 8px;
-    transition: 0.3s;
-}
-.sidebar-panel { left: -320px; top: 0; bottom: 0; width: 280px; }
-.sidebar-panel.open { left: 0; }
-
-.search-panel { top: 20px; left: 80px; width: 300px; transform: scale(0); transform-origin: top left; }
-.search-panel.open { transform: scale(1); }
-
-.panel-header { display: flex; justify-content: space-between; margin-bottom: 15px; border-bottom: 1px solid #ddd; }
-.search-input { width: 100%; padding: 10px; margin-bottom: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
-.panel-action-btn { width: 100%; padding: 10px; background: #1976d2; color: white; border: none; border-radius: 4px; cursor: pointer; }
 
 /* --- TIMETABLE PAPER --- */
 .timetable-paper {
@@ -61,7 +44,7 @@
     box-sizing: border-box;
 }
 
-.timetable-header { text-align: center; margin-bottom: 5px;}
+.timetable-header { text-align: center; margin-bottom: 5px; }
 .timetable-header h2 { margin: 0; font-size: 1.2rem; text-transform: uppercase; color: #333; }
 
 /* --- GRID SYSTEM --- */
@@ -105,7 +88,6 @@
     align-items: center;
     justify-content: center;
     font-weight: bold;
-    /* font-size: 1.5rem; */
     border-right: 2px solid #000;
     color: #000;
 }
@@ -183,3 +165,88 @@
     padding: 2px;
 }
 .delete-x:hover { color: red; }
+
+/* --- SHARED POPUP BASE --- */
+/* This is kept here because it relates to the main container positioning */
+.popup-panel {
+    position: absolute;
+    background: white;
+    box-shadow: 5px 0 25px rgba(0,0,0,0.2);
+    padding: 20px; z-index: 999;
+    border-radius: 8px;
+    transition: 0.3s;
+}
+
+.panel-header { 
+    display: flex; 
+    justify-content: space-between; 
+    margin-bottom: 15px; 
+    border-bottom: 1px solid #ddd; 
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    color: black;
+}
+
+.course-block-absolute {
+    /* Existing styles... */
+    transition: all 0.3s ease; /* Smooth transition when expanding/shrinking */
+}
+
+/* When a block is "Split" (sharing a cell) */
+.course-block-absolute.split-top {
+    height: 50% !important;
+    top: 0 !important;
+    bottom: auto !important;
+    border-bottom: 1px dashed #999;
+}
+
+.course-block-absolute.split-bottom {
+    height: 50% !important;
+    top: auto !important;
+    bottom: 0 !important;
+    border-top: 1px dashed #999;
+}
+
+/* Ensure text is smaller in split view so it fits */
+.course-block-absolute.split-top strong,
+.course-block-absolute.split-bottom strong {
+    font-size: 0.65rem;
+}
+
+/* --- MINIMIZE PANEL (Right Side) --- */
+
+.right-panel {
+    left: auto;
+    right: -320px; /* Hidden to right */
+    top: 0; bottom: 0;
+    width: 280px;
+    border-left: 1px solid #ccc;
+}
+
+.right-panel.open {
+    right: 0;
+    left: auto;
+}
+
+.minimized-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #fff3e0; /* Light Orange background */
+}
+
+.restore-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1.2rem;
+    padding: 5px;
+}
+.restore-btn:hover {
+    transform: scale(1.2);
+}

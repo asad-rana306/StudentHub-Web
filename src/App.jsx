@@ -6,7 +6,7 @@ import FillForm from './components/FillForm';
 import GradeCal from './components/GradeCal';
 import PastPaper from './components/PastPaper';
 import AddSection from './components/addSection';
-import ClashSolver from './components/ClashSolver';
+import ClashSolver from './components/clash/ClashSolver';
 
 function App() {
   return (

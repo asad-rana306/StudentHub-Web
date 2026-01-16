@@ -1,0 +1,102 @@
+/* --- SIDEBAR PANEL --- */
+.sidebar-panel {
+    left: -840px; 
+    top: 0; 
+    bottom: 0; 
+    width: 800px; 
+    color: black;
+}
+
+.sidebar-panel.open {
+    left: 0;
+}
+
+/* --- SAVED LIST ITEMS --- */
+.saved-list {
+    max-height: 85vh;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+.saved-item {
+    display: flex;
+    align-items: center;
+    gap: 12px; /* Space between ID, Text, Button */
+    
+    background-color: #f8f9fa;
+    padding: 15px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid #e9ecef;
+    transition: all 0.2s;
+}
+
+.saved-item:hover {
+    background-color: #e2e6ea;
+    transform: translateX(2px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* 1. ID Badge */
+.saved-id-badge {
+    background-color: #333;
+    color: white;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.85rem;
+    flex-shrink: 0; /* Prevents shrinking */
+}
+
+/* 2. Content Area */
+.saved-content {
+    flex: 1; /* Takes available space */
+    overflow: hidden; /* Hides overflow text */
+    display: flex;
+    flex-direction: column;
+}
+
+.saved-date {
+    font-size: 0.75rem;
+    color: #666;
+    margin-bottom: 4px;
+}
+
+.course-names {
+    font-weight: 600;
+    font-size: 0.95rem;
+    color: #2c3e50;
+    white-space: nowrap; /* Forces single line */
+    overflow: hidden;
+    text-overflow: ellipsis; /* Adds '...' if too long */
+    text-transform: capitalize;
+}
+
+/* 3. Delete Button */
+.delete-saved-btn {
+    background: transparent;
+    border: none;
+    font-size: 1.1rem;
+    cursor: pointer;
+    padding: 8px;
+    border-radius: 4px;
+    transition: background 0.2s;
+    opacity: 0.7;
+}
+
+.delete-saved-btn:hover {
+    opacity: 1;
+    background-color: #ffebee; /* Light red background */
+}
+
+.empty-msg {
+    text-align: center;
+    color: #999;
+    font-style: italic;
+    margin-top: 30px;
+}

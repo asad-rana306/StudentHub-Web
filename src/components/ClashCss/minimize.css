@@ -1,0 +1,74 @@
+
+
+/* --- MINIMIZED LIST ITEMS --- */
+.minimized-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    
+    /* Distinct background color (Light Orange/Warning tint) */
+    background-color: #fff8e1; 
+    border: 1px solid #ffecb3;
+    
+    padding: 12px;
+    margin-bottom: 10px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+}
+
+.minimized-item:hover {
+    background-color: #ffecb3;
+    transform: translateX(-3px); /* Nudge left on hover */
+}
+
+/* Course Info Text */
+.min-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.min-info strong {
+    font-size: 0.85rem;
+    color: #e65100; /* Dark Orange Text */
+    margin-bottom: 2px;
+}
+
+.min-info small {
+    font-size: 0.75rem;
+    color: #795548;
+}
+
+/* --- RESTORE BUTTON (Return Arrow) --- */
+.restore-btn {
+    background: white;
+    border: 1px solid #ffe0b2;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    
+    cursor: pointer;
+    font-size: 1rem;
+    color: #e65100;
+    transition: all 0.2s;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.restore-btn:hover {
+    background-color: #e65100;
+    color: white;
+    transform: scale(1.1) rotate(-10deg); /* slight rotation for effect */
+    border-color: #e65100;
+}
+
+/* Empty State Message */
+.empty-msg {
+    text-align: center;
+    color: #999;
+    font-style: italic;
+    margin-top: 30px;
+    font-size: 0.9rem;
+}
