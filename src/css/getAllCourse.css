@@ -1,0 +1,182 @@
+/* --- PAGE LAYOUT --- */
+.all-courses-container {
+    background-color: #eef2f5;
+    min-height: 100vh;
+    padding: 20px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: black;
+}
+
+.dashboard-header {
+    background: #2c3e50;
+    color: white;
+    padding: 20px;
+    border-radius: 8px;
+    margin-bottom: 30px;
+    display: flex;    color: black;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.dashboard-header input {
+    padding: 10px;
+    border-radius: 4px;
+    border: none;
+    width: 300px;
+    font-size: 1rem;
+}
+
+.loading-screen, .error-screen {
+    text-align: center;
+    margin-top: 50px;
+    font-size: 1.5rem;
+    color: #555;
+}
+
+/* --- INDIVIDUAL TIMETABLE CARD --- */
+.timetable-wrapper {
+    background: white;
+    border: 1px solid #000; /* Sharp border like screenshot */
+    margin-bottom: 50px; /* Space between tables */
+    padding: 10px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    page-break-inside: avoid; /* Good for printing */
+}
+
+/* --- HEADER SECTION --- */
+.tt-header {
+    text-align: center;
+    border-bottom: 2px solid #000;
+    padding-bottom: 10px;
+    margin-bottom: 5px;
+    position: relative;
+}
+
+.tt-header h2 { margin: 0; font-size: 1rem; font-weight: normal; }
+.section-title { margin: 5px 0; font-size: 1.8rem; text-transform: uppercase; font-weight: bold; }
+.cui-label { position: absolute; left: 0; top: 0; font-size: 0.8rem; font-weight: bold; }
+
+/* --- GRID SYSTEM --- */
+.tt-grid-container {
+    display: flex;
+    flex-direction: column;
+    border: 2px solid #000;
+    /* Define Column Width: 24 slots (30 mins each) + Day Col */
+    /* We handle this using Flexbox for rows, and percent widths for cells */
+    --day-col-width: 60px;
+    --col-width: 4.166%; /* 100% / 24 slots */
+}
+
+.tt-row {
+    display: flex;
+    border-bottom: 1px solid #000;
+    min-height: 80px; /* Height of day rows */
+    position: relative;
+}
+
+.header-row {
+    min-height: 50px;
+    border-bottom: 2px solid #000;
+    background-color: #fff;
+}
+
+.tt-row:last-child { border-bottom: none; }
+
+/* CELLS */
+.day-col {
+    width: var(--day-col-width);
+    flex-shrink: 0;
+    border-right: 2px solid #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.time-header-cell {
+    width: var(--col-width);
+    border-right: 1px solid #ccc;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+}
+
+.time-header-cell:last-child { border-right: none; }
+
+.slot-id { font-weight: bold; margin-bottom: 2px; }
+.slot-times { display: flex; flex-direction: column; line-height: 1; text-align: center; }
+
+/* --- COURSE BLOCKS (Overlay) --- */
+/* We don't use grid cells for the body to avoid gaps. 
+   We overlay divs on top of the row. */
+.courses-overlay {
+    flex-grow: 1;
+    position: relative;
+    /* Draw vertical grid lines in background */
+    background-image: linear-gradient(to right, #ccc 1px, transparent 1px);
+    background-size: var(--col-width) 100%; 
+}
+
+.tt-course-block {
+    position: absolute;
+    top: 1px; bottom: 1px;
+    /* Left and Width are set inline by React */
+    border: 1px solid #333;
+    padding: 2px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    overflow: hidden;
+    z-index: 10;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.1);
+}
+
+.corner-tag {
+    position: absolute;
+    top: 0; left: 0;
+    width: 0; height: 0;
+    border-top: 15px solid red; /* Color set inline */
+    border-right: 15px solid transparent;
+}
+
+.block-content {
+    text-align: center;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+.subject-name {
+    font-size: 0.7rem;
+    font-weight: bold;
+    line-height: 1.1;
+    margin-bottom: 2px;
+}
+
+.teacher-name {
+    font-size: 0.6rem;
+    color: #555;
+    margin-bottom: 2px;
+}
+
+.room-badge {
+    align-self: flex-end; /* Bottom right */
+    font-size: 0.7rem;
+    font-weight: bold;
+    margin-right: 2px;
+}
+
+/* Print Optimization */
+@media print {
+    .dashboard-header { display: none; }
+    .timetable-wrapper { page-break-after: always; border: none; box-shadow: none; }
+    .all-courses-container { background: white; padding: 0; }
+}

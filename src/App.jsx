@@ -7,6 +7,7 @@ import GradeCal from './components/GradeCal';
 import PastPaper from './components/PastPaper';
 import AddSection from './components/addSection';
 import ClashSolver from './components/clash/ClashSolver';
+import GetAllCourse from './components/getAllCourse';
 
 function App() {
   return (
@@ -20,6 +21,7 @@ function App() {
         <Route path="/past-paper" element={<PastPaper />} />
         <Route path="/add-section" element={<AddSection />} />
         <Route path="/clash-solver" element={<ClashSolver />} />
+        <Route path="/getAllCourse" element={<GetAllCourse />} />
 
       </Routes>
     </Router>
