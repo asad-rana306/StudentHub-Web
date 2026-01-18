@@ -52,3 +52,67 @@
     border: 1px solid #ffcdd2;
     text-align: center;
 }
+/* ... Existing styles ... */
+
+.search-panel { 
+    top: 20px; 
+    left: 80px; 
+    width: 300px; 
+    transform: scale(0); 
+    transform-origin: top left; 
+    overflow: visible; /* IMPORTANT: Allow dropdown to overflow */
+}
+
+/* Wrapper to position the dropdown relative to the input */
+.input-wrapper {
+    position: relative;
+    width: 100%;
+}
+
+.search-input { 
+    width: 100%; 
+    padding: 10px; 
+    margin-bottom: 10px; 
+    border: 1px solid #ccc; 
+    border-radius: 4px; 
+    box-sizing: border-box; 
+}
+
+/* --- SUGGESTIONS DROPDOWN --- */
+.suggestions-list {
+    position: absolute;
+    top: 42px; /* Just below the input (adjust based on input height) */
+    left: 0;
+    width: 100%;
+    max-height: 150px;
+    overflow-y: auto;
+    background-color: white;
+    border: 1px solid #ccc;
+    border-top: none;
+    border-radius: 0 0 4px 4px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 1000;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.suggestions-list li {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    font-size: 0.9rem;
+    color: #333;
+    text-align: left;
+}
+
+.suggestions-list li:last-child {
+    border-bottom: none;
+}
+
+.suggestions-list li:hover {
+    background-color: #f0f7ff;
+    color: #007bff;
+}
+
+/* ... Rest of existing styles ... */

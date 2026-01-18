@@ -18,7 +18,6 @@ const SavedTimetables = ({ isOpen, onClose, savedTimetables, onLoad, onDelete })
                             onClose(); // Close sidebar
                         }}
                     > 
-                        {/* 1. ID Number (1, 2, 3...) */}
                         <div className="saved-id-badge">
                             {index + 1}
                         </div>
