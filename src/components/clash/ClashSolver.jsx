@@ -5,15 +5,12 @@ import GetCourse from './getCourse';
 import Minimize from './minimize';
 
 const ClashSolver = () => {
-    // --- STATE ---
     const [currentSchedule, setCurrentSchedule] = useState([]);
     const [minimizedCourses, setMinimizedCourses] = useState([]); 
     const [clashList, setClashList] = useState([]);
     const [savedTimetables, setSavedTimetables] = useState([]);
     const [loading, setLoading] = useState(false);
-    
-    // UI Toggles
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+        const [isSidebarOpen, setIsSidebarOpen] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [isMinimizeOpen, setIsMinimizeOpen] = useState(false);
 
@@ -21,8 +18,6 @@ const ClashSolver = () => {
         const saved = localStorage.getItem('myTimetables');
         if (saved) setSavedTimetables(JSON.parse(saved));
     }, []);
-
-    // --- GENERATE HEADERS (08:30 - 20:30) ---
     const generateTimeHeaders = () => {
         const slots = [];
         let h = 8, m = 30;
@@ -41,36 +36,59 @@ const ClashSolver = () => {
     };
     const timeHeaders = generateTimeHeaders();
 
-    // --- ADD COURSE LOGIC ---
     const handleAddCourseLogic = async (sectionName, courseName) => {
-        if (!sectionName || !courseName) return;
-        setLoading(true);
-        try {
+    if (!sectionName || !courseName) return;
+    setLoading(true);
+
+    try {
+        // 1. Check Local Storage first for manually added/overridden courses
+        const localCourses = JSON.parse(localStorage.getItem('customCourses') || '[]');
+        let courseData = localCourses.find(c => 
+            c.theorySectionName.toLowerCase() === sectionName.toLowerCase() && 
+            c.courseName.toLowerCase() === courseName.toLowerCase()
+        );
+
+        // 2. If not found locally, fetch from Backend
+        if (!courseData) {
             const url = `http://localhost:8080/api/courses/details?section=${sectionName}&course=${courseName}`;
             const res = await fetch(url);
-            if (!res.ok) throw new Error("Course not found");
-            const newCourse = await res.json();
             
-            const isDuplicate = currentSchedule.some(c => c.courseName === newCourse.courseName) || 
-                                minimizedCourses.some(c => c.courseName === newCourse.courseName);
-
-            if (!isDuplicate) {
-                const updated = [...currentSchedule, newCourse];
-                setCurrentSchedule(updated);
-                checkClashes(updated); // Check clashes immediately
+            if (res.ok) {
+                courseData = await res.json();
             } else {
-                alert("Course is already in timetable or minimized list.");
+                // If backend fails, offer manual entry
+                const confirmManual = window.confirm("Course not found in database. Would you like to add it manually?");
+                if (confirmManual) {
+                    // This assumes you add a state like: const [manualCourseInfo, setManualCourseInfo] = useState(null);
+                    // And a state to open your form: setIsManualOpen(true);
+                    setManualCourseInfo({ sectionName, courseName }); 
+                    setIsManualOpen(true); 
+                    return; 
+                }
+                throw new Error("Course not found.");
             }
-        } catch (err) { 
-            alert(err.message); 
-        } finally { 
-            setLoading(false); 
         }
-    };
 
-    // --- CORE CLASH CHECK (FIXED) ---
+        // 3. Add to Schedule (Reuse existing logic)
+        const isDuplicate = currentSchedule.some(c => c.courseName === courseData.courseName) || 
+                            minimizedCourses.some(c => c.courseName === courseData.courseName);
+
+        if (!isDuplicate) {
+            const updated = [...currentSchedule, courseData];
+            setCurrentSchedule(updated);
+            checkClashes(updated);
+        } else {
+            alert("Course is already in timetable or minimized list.");
+        }
+
+    } catch (err) { 
+        alert(err.message); 
+    } finally { 
+        setLoading(false); 
+    }
+};
+
     const checkClashes = async (schedule) => {
-        // If 0 or 1 course, impossible to clash. Clear list immediately.
         if (schedule.length < 2) { 
             setClashList([]); 
             return; 
@@ -94,42 +112,30 @@ const ClashSolver = () => {
                 body: JSON.stringify(payload)
             });
 
-            // --- FIX: Handle Text Response vs JSON Response ---
-            const text = await res.text(); // Get raw text first
+            const text = await res.text();
             
             try {
-                const data = JSON.parse(text); // Try to parse as JSON
+                const data = JSON.parse(text); 
                 if (Array.isArray(data)) {
-                    setClashList(data); // It's a real list of clashes
+                    setClashList(data);
                 } else {
-                    setClashList([]); // It's a JSON object (success message), so no clashes
+                    setClashList([]);
                 }
             } catch (e) {
-                // If parsing fails, it's the plain string "No clashes detected...", so clear the list
                 setClashList([]);
             }
 
         } catch (err) { 
             console.error("Clash Check Error:", err); 
-            // Optional: Clear clashes on network error to avoid stuck red blocks?
-            // setClashList([]); 
         }
     };
 
-    // --- MINIMIZE LOGIC ---
     const handleMinimizeCourse = (courseToMinimize) => {
-        // 1. Add to Minimized
         setMinimizedCourses([...minimizedCourses, courseToMinimize]);
-
-        // 2. Update Schedule
         const updatedSchedule = currentSchedule.filter(c => c.courseName !== courseToMinimize.courseName);
         setCurrentSchedule(updatedSchedule);
-
-        // 3. RE-CHECK CLASHES
         checkClashes(updatedSchedule);
     };
-
-    // --- RESTORE LOGIC ---
     const handleRestoreCourse = (courseToRestore) => {
         const updatedMinimized = minimizedCourses.filter(c => c.courseName !== courseToRestore.courseName);
         setMinimizedCourses(updatedMinimized);
@@ -139,7 +145,6 @@ const ClashSolver = () => {
 
         checkClashes(updatedSchedule);
     };
-
     const saveCurrentTimetable = () => {
         if(currentSchedule.length === 0) return;
         const newEntry = { id: Date.now(), date: new Date().toLocaleString(), courses: currentSchedule };
@@ -150,8 +155,6 @@ const ClashSolver = () => {
     };
 
     const isClashing = (courseName) => clashList.some(c => c.course1Name === courseName || c.course2Name === courseName);
-
-    // --- VISUAL SPLIT LOGIC ---
     const getVisualPosition = (currentCourse, day, startStr, endStr) => {
         const parseMinutes = (t) => { if(!t) return 0; const [h, m] = t.split(':').map(Number); return h * 60 + m; };
         const myStart = parseMinutes(startStr);
@@ -169,16 +172,10 @@ const ClashSolver = () => {
         const myIndex = overlappingCourses.findIndex(c => c.courseName === currentCourse.courseName);
         return myIndex === 0 ? 'split-top' : 'split-bottom';
     };
-    // --- DELETE SAVED TIMETABLE ---
     const handleDeleteSaved = (id) => {
-        // 1. Filter out the item with the matching ID
         const updated = savedTimetables.filter(t => t.id !== id);
-        
-        // 2. Update State (so it vanishes from screen)
-        setSavedTimetables(updated);
-        
-        // 3. Update Local Storage (so it stays deleted after refresh)
-        localStorage.setItem('myTimetables', JSON.stringify(updated));
+                setSavedTimetables(updated);
+                localStorage.setItem('myTimetables', JSON.stringify(updated));
     };
 
     const renderCourseBlock = (course, day, timeStart, type) => {

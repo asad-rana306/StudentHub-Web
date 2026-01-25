@@ -261,11 +261,12 @@ const AddSection = () => {
                     </div>
                     <div className="row">
                         <select name="labDayOfWeek" onChange={handleChange} value={formData.labDayOfWeek}>
-                            <option value="FRIDAY">Friday</option>
                             <option value="MONDAY">Monday</option>
                             <option value="TUESDAY">Tuesday</option>
                             <option value="WEDNESDAY">Wednesday</option>
                             <option value="THURSDAY">Thursday</option>
+                            <option value="FRIDAY">Friday</option>
+
                         </select>
                         <label>Start: <input type="time" name="labStartTime" value={formData.labStartTime} onChange={handleChange} /></label>
                         <label>End: <input type="time" name="labEndTime" value={formData.labEndTime} onChange={handleChange} /></label>

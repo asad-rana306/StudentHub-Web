@@ -11,7 +11,7 @@ const GetCourse = ({ isOpen, onClose, onAddCourse, loading, clashCount }) => {
     const handleCourseChange = async (e) => {
         const value = e.target.value;
         setCourseName(value);
-        if (value.length > 1) { // Only search if 2+ chars
+        if (value.length > 1) {
             try {
                 const res = await fetch(`http://localhost:8080/api/courses/suggestions?query=${value}`);
                 if (res.ok) {
